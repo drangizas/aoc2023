@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use std::{fs, path::Path};
 use std::{str, vec};
+use std::collections::HashMap;
 
 fn main() {
     let file =
@@ -8,7 +8,6 @@ fn main() {
 
     let mut points_sum = 0_u32;
     let mut scratchcards_won_map: HashMap<u32, u32> = HashMap::new();
-    let mut scratchcards_won_count = 0_u32;
 
     for line in file.split('\n') {
         let parts = line.split([':', '|']).collect::<Vec<&str>>();
@@ -32,25 +31,24 @@ fn main() {
 
         points_sum += points_for_game;
 
+        if let Some(games_won) = scratchcards_won_map.get_mut(&game_id) {
+            *games_won = games_won.clone() + 1_u32;
+        } else {
+            scratchcards_won_map.insert(game_id, 1_u32);
+        }
+
         for nr_won in 1..=matching_numbers.len() {
             let curr_key = game_id + nr_won as u32;
 
-            let iter_game_value = scratchcards_won_map.get(&curr_key).unwrap_or(&0_u32);
-            let curr_game_value = scratchcards_won_map.get(&game_id).unwrap_or(&0_u32);
-            println!(
-                "{}:{}, {}:{}",
-                curr_key, iter_game_value, game_id, curr_game_value
-            );
-
-            scratchcards_won_map.insert(curr_key, 1 + (1 * iter_game_value * curr_game_value));
+            *scratchcards_won_map.entry(curr_key).or_insert(0) += *scratchcards_won_map.get_mut(&game_id).unwrap();
         }
-        println!("Current scratchards map: {:?}", scratchcards_won_map);
+
+        println!("curr game: {}, matching numbers: {}, games won: {:?}", game_id, matching_numbers.len(), scratchcards_won_map.get(&game_id));
+        println!("----------------------------------------------------");
     }
 
-    scratchcards_won_count = scratchcards_won_map.values().sum();
-
     println!("Calculated total sum: {}", points_sum);
-    println!("Scratchards in total: {}", scratchcards_won_count);
+    println!("Scratchards in total: {}", scratchcards_won_map.values().sum::<u32>());
 }
 
 fn parse_game_id(data: &str) -> u32 {
